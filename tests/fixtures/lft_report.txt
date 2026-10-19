@@ -1,0 +1,55 @@
+Page 1/2
+
+Patient  : Mr. TEST PATIENT  Order No.  : ORD0000000002
+UHID / IP No.  : XX01.0000000  Ordered By  : Dr. Example Doctor -
+Gastroenterology
+Age  : 30 years / Male  Ordered at  : 01/10/2026 | 12:39 PM
+Sample Collected at  : 01/10/2026 | 12:42 PM  Payor  : Self-Pay
+Received at  : 01/10/2026 | 01:06 PM  Reported at  : 01/10/2026 | 02:48 PM
+Visit Type  : OP  Sample ID  : SMP00000001
+
+BIOCHEMISTRY
+
+Test  Result  Unit  Reference Interval  Flag
+LIVER FUNCTION TEST
+Sample: SERUM PLAIN
+TOTAL BILIRUBIN
+0.80  mg/dL  0.1 - 1.2  Normal
+(Method:Colorimetric Diazo)
+DIRECT BILIRUBIN.
+0.30  mg/dl  0.1 - 0.5
+(Method:CALCULATED)
+INDIRECT BILIRUBIN
+0.50  mg/dl  0.3 - 1  Normal
+(Method:Reflectance Spectrophotometry)
+ASPARTATE TRANSAMINASE (SGOT).
+72.00  IU/L  15 - 41
+(Method:UV WITH P5P)
+ALANINE TRANSAMINASE.(SGPT)
+73.00  U/L  17 - 63
+(Method:UV WITH P5P)
+ALKALINE PHOSPHATASE.
+221.00  IU/L  32 - 126
+(Method:PNPP, AMP BUFFER)
+GGT.
+19.00  IU/L  7 - 50
+(Method:G-GLUTAMYL-P-NITROANILIDE)
+TOTAL PROTEIN
+8.30  g/dL  6.5 - 8.1
+(Method:BIURET)
+ALBUMIN
+4.80  g/dL  3.5 - 5
+(Method:BROMOCRESOL GREEN)
+GLOBULIN
+3.50  g/dL  2 - 4
+(Method:CALCULATED)
+A : G RATIO
+1.37  0.8 - 2
+(Method:CALCULATED)
+
+Report Disclaimer
+All results released pertain to the specimen as received by the lab for testing.
+
+- - - - - - - - - - - - - - - - E n d O f R e p o r t - - - - - - - - - - - - - - - -
+
+Example Hospital, Example Road, Bangalore - 560000.

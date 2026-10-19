@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Reports</h1><p class="muted">Every file you added, newest first. Open one to check what was read.</p></div>
+</div>
+<section class="upload">
+<form action="/upload" method="post" enctype="multipart/form-data" class="drop" data-busy="Uploading&hellip;">
+  <span class="drop-icon">{{ icon("upload") }}</span>
+  <label>Add reports
+    <span class="muted">Drop PDFs or photos here, or click to choose.</span>
+    <span class="chosen"></span>
+    <input type="file" name="files" multiple accept="application/pdf,image/png,image/jpeg,image/webp" required>
+  </label>
+  <button>{{ icon("sparkles") }}Read reports</button>
+</form>
+</section>
+<div class="table-wrap">
+<table class="labs docs t-docs">
+  <thead><tr><th>Date</th><th>File</th><th>Lab / hospital</th><th>Values</th><th>Read with</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for d in docs %}
+  <tr><td class="nowrap">{{ d.report_date or '' }}</td>
+    <td><a class="clamp2" href="/doc/{{ d.id }}/review" title="{{ d.title or d.filename }}">{{ d.title or d.filename }}</a>{% if d.title %}<span class="clip muted small" title="{{ d.filename }}">{{ d.filename }}</span>{% endif %}</td>
+    <td>{% if d.lab %}<span class="clamp2" title="{{ d.lab }}">{{ d.lab }}</span>{% endif %}</td>
+    <td><strong>{{ d.n_obs }}</strong> <span class="muted">labs</span>, <strong>{{ d.n_items }}</strong> <span class="muted">other</span></td>
+    <td class="small muted">{{ d.engine or '' }}</td>
+    <td>{% if d.patient_check == 'mismatch' and d.status != 'reading' %}<a class="tag high" href="/doc/{{ d.id }}/review" title="The patient on this report doesn't match your profile">check patient</a>{% elif d.status == 'done' %}<span class="tag normal">checked</span>{% elif d.status == 'reading' %}<a class="tag reading" href="/doc/{{ d.id }}/review">reading&hellip;</a>{% elif d.status == 'error' %}<a class="tag high" href="/doc/{{ d.id }}/review">error</a>{% else %}<a class="tag unrev" href="/doc/{{ d.id }}/review">to review</a>{% endif %}</td></tr>
+  {% else %}
+  <tr><td colspan="6"><div class="empty"><span class="drop-icon">{{ icon("files") }}</span><strong>No reports yet</strong><br>Drop a lab report above to get started.</div></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if docs|selectattr('status', 'equalto', 'reading')|list %}<script>setTimeout(function () { location.reload(); }, 4000);</script>{% endif %}
+{% endblock %}

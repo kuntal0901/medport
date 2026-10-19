@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ name }}{% endblock %}
+{% block content %}
+{% set last = pts[-1] %}
+<a class="back" href="/">{{ icon("back") }}Portfolio</a>
+<div class="page-head"><div><h1>{{ name }}</h1><p class="muted">{{ pts|length }} result{{ 's' if pts|length != 1 }} from {{ pts[0].date }} to {{ last.date }}</p></div></div>
+<section class="stats">
+  <div class="stat {{ 'tone-high' if last.flag == 'high' else 'tone-low' if last.flag == 'low' else 'tone-ok' if last.flag == 'normal' else '' }}"><span class="ico">{{ icon("activity") }}</span><div><b>{{ last.value_text }} <small class="muted" style="font-size:13px;font-weight:500">{{ last.unit or '' }}</small></b><span>latest, {{ last.date }}{% if last.flag in ('high','low') %} &middot; {{ last.flag }}{% endif %}</span></div></div>
+  {% if last.ref_text %}<div class="stat"><span class="ico">{{ icon("shield") }}</span><div><b style="font-size:18px">{{ last.ref_text }}</b><span>reference range</span></div></div>{% endif %}
+  {% if pts|length > 1 %}{% set first = pts[0] %}<div class="stat tone-primary"><span class="ico">{{ icon("trend") }}</span><div><b style="font-size:18px">{{ first.value_text }} &rarr; {{ last.value_text }}</b><span>first to latest</span></div></div>{% endif %}
+</section>
+<div class="chart">{{ chart | safe }}</div>
+<div class="table-wrap">
+<table class="labs t-history">
+  <thead><tr><th>Date</th><th>Value</th><th>Reference</th><th>As printed</th><th>Source</th></tr></thead>
+  <tbody>
+  {% for o in pts | reverse %}
+  <tr><td>{{ o.date }}</td>
+    <td class="{{ o.flag or '' }}"><strong>{{ o.value_text }}</strong> {{ o.unit or '' }} {% if o.flag in ('high','low') %}<span class="tag {{ o.flag }}">{{ o.flag }}</span>{% endif %}</td>
+    <td>{{ o.ref_text or '' }}</td>
+    <td class="muted">{{ o.test }}</td>
+    <td class="small"><a class="clip" title="{{ o.filename }}" href="/doc/{{ o.doc_id }}{% if o.page %}#page={{ o.page }}{% endif %}" target="_blank">{{ o.filename }}</a>{% if o.lab %} &middot; {{ o.lab }}{% endif %} &middot; <a href="/doc/{{ o.doc_id }}/review">edit</a></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Review {{ d.filename }}{% endblock %}
+{% block content %}
+<a class="back" href="/documents">{{ icon("back") }}All reports</a>
+<div class="review-head">
+  <div>
+    <h1>Check what was read</h1>
+    <p class="muted">{{ d.filename }} &middot; read with <span class="engine">{{ icon("sparkles") }}{{ d.engine or 'n/a' }}</span><br>Compare each value with the report on the left, fix anything wrong, then confirm.</p>
+    {% if d.patient_check == 'mismatch' and not reading %}
+    <div class="patient-check" role="alert">
+      <div class="pc-head">{{ icon("alert") }}<strong>This report may belong to someone else</strong></div>
+      <p>{% set why = d.patient_note or "the details on this report don't match your profile" %}{{ why[:1]|upper }}{{ why[1:] }}.
+        Nothing from it is in your portfolio yet.</p>
+      <div class="actions">
+        <form method="post" action="/doc/{{ d.id }}/patient"><button name="decision" value="add">{{ icon("check") }}Yes, it's mine, add it</button></form>
+        <form method="post" action="/doc/{{ d.id }}/patient" onsubmit="return confirm('Remove this report and everything read from it?')"><button name="decision" value="discard" class="danger-outline">{{ icon("trash") }}No, remove it</button></form>
+      </div>
+      <p class="muted small">If the name is right but your profile is wrong, <a href="/profile">fix your profile</a> and press Read again.</p>
+    </div>
+    {% elif d.patient_name and not reading %}
+    <p class="patient-ok">{{ icon("user") }}Patient on report: <strong>{{ d.patient_name }}</strong>
+      {% if d.patient_check == 'match' %}<span class="tag normal">matches your profile</span>
+      {% elif d.patient_check == 'accepted' %}<span class="tag unrev">you added it</span>
+      {% else %}<span class="muted small">&middot; <a href="/profile">add your name to your profile</a> to check reports automatically</span>{% endif %}</p>
+    {% endif %}
+    {% if reading %}<div class="reading-card" role="status" data-progress="/doc/{{ d.id }}/progress">
+      <div class="row"><span class="spinner"></span><strong data-step>{{ reading }}&hellip;</strong><span class="muted small" data-elapsed></span></div>
+      <div class="bar"></div>
+      <div class="muted small">A local model on a laptop can take a minute or more per page. This page updates by itself; you can leave it open or come back later.</div>
+    </div>
+    {% elif d.note %}<div class="flash warn">{% for line in d.note.split('\n') %}<div>{{ line }}</div>{% endfor %}</div>{% endif %}
+  </div>
+  <div class="actions">
+    <form method="post" action="/doc/{{ d.id }}/reprocess" data-busy="Starting&hellip;"><button class="secondary" title="Read the file again, e.g. after starting a local model"{% if reading %} disabled{% endif %}>{{ icon("refresh") }}Read again</button></form>
+    <form method="post" action="/doc/{{ d.id }}/confirm"><button data-confirm-all{% if reading or d.patient_check == 'mismatch' %} disabled{% endif %}>{{ icon("check") }}Looks right, confirm</button></form>
+  </div>
+</div>
+
+<div class="split">
+  <div class="viewer">
+    {% if d.mime == 'application/pdf' %}<iframe src="/doc/{{ d.id }}" title="Original report"></iframe>
+    {% else %}<img src="/doc/{{ d.id }}" alt="Original report">{% endif %}
+  </div>
+
+  <div class="fields">
+    <form method="post" action="/doc/{{ d.id }}/meta" class="meta">
+      <label>Report date <input name="report_date" value="{{ d.report_date or '' }}" required></label>
+      <label>Title <input name="title" value="{{ d.title or '' }}" placeholder="e.g. Lipid profile"></label>
+      <label>Lab / hospital <input name="lab" value="{{ d.lab or '' }}"></label>
+      <button class="secondary">Save</button>
+    </form>
+
+    <h2 id="obs">{{ icon("flask") }}Lab values <span class="tag unrev">{{ obs|length }}</span></h2>
+    <div class="table-wrap">
+    <table class="edit">
+      <thead><tr><th>Test</th><th>Value</th><th>Unit</th><th>Reference</th><th></th></tr></thead>
+      <tbody>
+      {% for o in obs %}
+      <tr class="{{ 'ok' if o.verified }}">
+        <td><input form="o{{ o.id }}" name="test" value="{{ o.test }}">{% if o.canonical and o.canonical != o.test %}<div class="muted small">= {{ o.canonical }}{% if o.loinc %} &middot; LOINC {{ o.loinc }}{% endif %}</div>{% elif not o.canonical %}<div class="muted small">not a known test name</div>{% endif %}</td>
+        <td><input form="o{{ o.id }}" name="value_text" value="{{ o.value_text }}" class="num {{ o.flag or '' }}"></td>
+        <td><input form="o{{ o.id }}" name="unit" value="{{ o.unit or '' }}" class="unit"></td>
+        <td><input form="o{{ o.id }}" name="ref_text" value="{{ o.ref_text or '' }}"></td>
+        <td class="nowrap"><form id="o{{ o.id }}" method="post" action="/obs/{{ o.id }}"><span class="muted small">p.{{ o.page or '?' }}</span>
+          <button name="action" value="save" class="small secondary">Save</button>
+          <button name="action" value="delete" class="small danger" title="Remove" aria-label="Remove">{{ icon("x") }}</button></form></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">No lab values found. Add them below{% if not (ai and ai.has_model) %}, or start a local model and read again{% endif %}.</td></tr>
+      {% endfor %}
+      <tr class="add">
+        <td><input form="addobs" name="test" placeholder="Test name" required></td>
+        <td><input form="addobs" name="value_text" placeholder="Value" required class="num"></td>
+        <td><input form="addobs" name="unit" placeholder="Unit" class="unit"></td>
+        <td><input form="addobs" name="ref_text" placeholder="e.g. 70 - 100"></td>
+        <td class="nowrap"><form id="addobs" method="post" action="/doc/{{ d.id }}/obs"><button class="small">+ Add</button></form></td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="items">{{ icon("pill") }}Conditions, medications, allergies <span class="tag unrev">{{ items|length }}</span></h2>
+    <div class="table-wrap">
+    <table class="edit">
+      <thead><tr><th>Type</th><th>Name</th><th>Details</th><th></th></tr></thead>
+      <tbody>
+      {% for it in items %}
+      <tr>
+        <td><span class="tag {{ 'high' if it.kind == 'allergy' else 'unrev' }}">{{ it.kind }}</span></td>
+        <td><input form="i{{ it.id }}" name="name" value="{{ it.name }}"></td>
+        <td><input form="i{{ it.id }}" name="detail" value="{{ it.detail or '' }}"></td>
+        <td class="nowrap"><form id="i{{ it.id }}" method="post" action="/item/{{ it.id }}"><button name="action" value="save" class="small secondary">Save</button>
+          <button name="action" value="delete" class="small danger" aria-label="Remove">{{ icon("x") }}</button></form></td>
+      </tr>
+      {% endfor %}
+      <tr class="add">
+        <td><select form="additem" name="kind"><option value="condition">condition</option><option value="medication">medication</option><option value="allergy">allergy</option></select></td>
+        <td><input form="additem" name="name" placeholder="Name" required></td>
+        <td><input form="additem" name="detail" placeholder="Dose, notes"></td>
+        <td class="nowrap"><form id="additem" method="post" action="/items"><input type="hidden" name="doc_id" value="{{ d.id }}"><button class="small">+ Add</button></form></td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <details class="rawtext">
+      <summary>Text read from the file</summary>
+      {% for pg in pages %}<h3>Page {{ pg.page }}{% if pg.ocr %} (OCR){% endif %}</h3><pre>{{ pg.text }}</pre>{% endfor %}
+    </details>
+    <form method="post" action="/doc/{{ d.id }}/delete" onsubmit="return confirm('Delete this report and its values from this computer?')">
+      <button class="danger">{{ icon("trash") }}Delete this report</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

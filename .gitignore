@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# build output (the Windows download is attached to a GitHub release, not committed)
+build/
+dist/
+*.spec.bak
+
+# personal data must never be committed: MedPort keeps it in ~/.medport, but just in case
+.medport/
+*.medvault
+*.db
+*.sqlite
+documents/
+backup-*/
+tls/
+*.key
+*.pem
+*.crt
+medical-portfolio-*.html
+
+# editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

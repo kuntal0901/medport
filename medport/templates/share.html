@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Share &amp; backup{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Share with a doctor</h1><p class="muted">Three ways, none of which upload your records anywhere.</p></div></div>
+<div class="grid3">
+  <div class="card">
+    <span class="feature-icon">{{ icon("printer") }}</span>
+    <h2>Print or PDF</h2>
+    <p class="muted">Works in every hospital. Opens the print dialog; choose "Save as PDF" to keep a copy.</p>
+    <a class="button" href="/?print=1">{{ icon("printer") }}Open portfolio and print</a>
+  </div>
+  <div class="card">
+    <span class="feature-icon">{{ icon("lock") }}</span>
+    <h2>Locked file</h2>
+    <p class="muted">A single HTML file you can send by email or WhatsApp. The doctor opens it in any browser and types the passphrase you tell them. It is encrypted before it leaves this computer.</p>
+    <form method="post" action="/share/file" class="stack">
+      <input name="passphrase" type="text" placeholder="Passphrase to tell the doctor" minlength="6" required autocomplete="off">
+      <button>{{ icon("download") }}Download locked file</button>
+    </form>
+  </div>
+  <div class="card">
+    <span class="feature-icon">{{ icon("qr") }}</span>
+    <h2>QR code (same Wi-Fi)</h2>
+    {% if not lan %}
+    <p class="muted">Start MedPort with <code>--lan</code> to let a phone on the same network scan a QR code and view a read-only copy. Only the share link is reachable from other devices.</p>
+    {% elif link %}
+    <div class="qr-share">
+      <div class="qr">{{ qr | safe }}</div>
+      <p class="live"><span class="live-dot"></span>Sharing now &middot; <span data-expires="{{ expires | int }}">expires in {{ ((expires - now) / 60) | round | int }} min</span></p>
+      <div class="copy-field">
+        <input type="text" value="{{ link }}" readonly aria-label="Share link" onfocus="this.select()">
+        <button type="button" class="secondary" data-copy="{{ link }}">{{ icon("copy") }}Copy</button>
+      </div>
+      <p class="muted small">Ask the doctor to scan this with their phone camera. They see a read-only copy, and only while both devices are on the same Wi-Fi.</p>
+      <form method="post" action="/share/revoke"><button class="danger-outline">{{ icon("x") }}Stop sharing now</button></form>
+    </div>
+    {% else %}
+    <p class="muted">Creates a read-only link that expires. Nothing is uploaded; the doctor's phone reads it from this computer.</p>
+    <form method="post" action="/share/link" class="stack">
+      <label>Valid for <select name="hours"><option value="1">1 hour</option><option value="2" selected>2 hours</option><option value="24">24 hours</option></select></label>
+      <button>{{ icon("qr") }}Show QR code</button>
+    </form>
+    {% if active %}<form method="post" action="/share/revoke"><button class="link">Revoke {{ active }} active link(s)</button></form>{% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="page-head" id="phone" style="margin-top:36px"><div><h1>Phone app</h1><p class="muted">An encrypted copy of your portfolio on your phone. Show it or send it at the clinic with no laptop or internet; it updates whenever the phone is on your home Wi-Fi.</p></div></div>
+{% if not phone %}
+<div class="card" style="max-width:760px">
+  <span class="feature-icon">{{ icon("qr") }}</span>
+  <h2>Start MedPort for your Wi-Fi</h2>
+  <p class="muted">Close MedPort and start it with <code>py -m medport --lan</code>, then come back here. Windows may ask whether Python can use networks: allow <strong>Private networks</strong> only.</p>
+  {% if devices %}<p class="muted small">{{ devices|length }} phone{{ 's' if devices|length != 1 }} paired. They keep working offline with their last copy.</p>{% endif %}
+</div>
+{% else %}
+<div class="grid3">
+  <div class="card">
+    <span class="feature-icon">1</span>
+    <h2>Set up the phone (once)</h2>
+    <p class="muted">Scan with the phone's camera while it's on the same Wi-Fi. The page shows how to trust MedPort on this network and add the app to the home screen.</p>
+    <div class="qr-share"><div class="qr">{{ phone.setup_qr | safe }}</div>
+      <div class="copy-field"><input type="text" value="{{ phone.urls.setup }}" readonly aria-label="Setup link" onfocus="this.select()"><button type="button" class="secondary" data-copy="{{ phone.urls.setup }}">{{ icon("copy") }}Copy</button></div></div>
+  </div>
+  <div class="card">
+    <span class="feature-icon">2</span>
+    <h2>Pair the phone</h2>
+    {% if phone.pair_qr %}
+    <div class="qr-share">
+      <div class="qr">{{ phone.pair_qr | safe }}</div>
+      <p class="live"><span class="live-dot"></span>One-time code &middot; <span data-expires="{{ phone.pair_expires | int }}">expires in 10 min</span></p>
+      {% set pc = phone.pair_code %}<p class="pair-code">{{ pc[:4] }}-{{ pc[4:] }}</p>
+      <p class="muted small" data-pair-status="{{ pc }}" aria-live="polite">Waiting for the phone&hellip;</p>
+      <p class="muted small">Scan it with the phone camera, or type this code into the MedPort app (on iPhone, use the app on the home screen). The phone then picks a PIN and downloads its encrypted copy.</p>
+    </div>
+    {% else %}
+    <p class="muted">Makes a one-time QR code, valid for 10 minutes. Only a phone that scans it can sync your portfolio.</p>
+    <form method="post" action="/share/pair"><button>{{ icon("qr") }}Pair a phone</button></form>
+    {% endif %}
+  </div>
+  <div class="card">
+    <span class="feature-icon">{{ icon("shield") }}</span>
+    <h2>Paired phones</h2>
+    {% for dv in devices %}
+    <div class="item device"><div class="item-main"><strong>{{ dv.name }}</strong>
+      <div class="item-src">paired {{ dv.created_at[:10] }}{% if dv.last_seen %} &middot; last synced {{ dv.last_seen[:16]|replace('T', ' ') }}{% endif %}</div></div>
+      <form method="post" action="/share/devices/{{ dv.id }}/revoke" onsubmit="return confirm('Remove this phone? It keeps its last copy but can no longer sync.')"><button class="small danger" title="Remove">{{ icon("x") }}</button></form></div>
+    {% else %}<p class="muted">None yet.</p>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="page-head" style="margin-top:36px"><div><h1>Back up or move to another device</h1><p class="muted">Encrypted with your passphrase, so it is safe to keep anywhere.</p></div></div>
+<div class="grid3">
+  <div class="card">
+    <span class="feature-icon">{{ icon("shield") }}</span>
+    <h2>Export encrypted backup</h2>
+    <p class="muted">One <code>.medvault</code> file with all reports and values, encrypted with your passphrase. Safe to keep in iCloud, Google Drive or a USB stick: without the passphrase it is unreadable.</p>
+    <form method="post" action="/vault/export" class="stack">
+      <input name="passphrase" type="password" placeholder="Backup passphrase (8+ characters)" minlength="8" required>
+      <button>{{ icon("download") }}Download backup</button>
+    </form>
+  </div>
+  <div class="card">
+    <span class="feature-icon">{{ icon("upload") }}</span>
+    <h2>Restore from backup</h2>
+    <p class="muted">Replaces what is on this computer with the backup. Your current data is saved in a backup folder first.</p>
+    <form method="post" action="/vault/import" enctype="multipart/form-data" class="stack" data-busy="Restoring&hellip;">
+      <input type="file" name="file" accept=".medvault" required>
+      <input name="passphrase" type="password" placeholder="Backup passphrase" required>
+      <button class="secondary">{{ icon("refresh") }}Restore</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

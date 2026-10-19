@@ -1,0 +1,366 @@
+{% raw %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d9488">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MedPort">
+<link rel="manifest" href="/m/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/m/icon-180.png">
+<title>MedPort</title>
+<style>
+:root{--bg:#f8fafc;--fg:#0f172a;--card:#fff;--muted:#64748b;--line:#e2e8f0;--input:#cbd5e1;--primary:#0d9488;--soft:#ccfbf1;
+  --ok:#059669;--ok-bg:#ecfdf5;--warn:#b45309;--warn-bg:#fffbeb;--err:#dc2626;--err-bg:#fef2f2;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1120;--fg:#e2e8f0;--card:#111827;--muted:#94a3b8;--line:#1f2a3c;--input:#334155;--primary:#14b8a6;--soft:#134e4a;
+  --ok:#34d399;--ok-bg:#0b2a20;--warn:#fbbf24;--warn-bg:#2a1f0b;--err:#f87171;--err-bg:#2a1215;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));
+  background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.logo{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#14b8a6,#0284c7);color:#fff}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.02em}
+.pill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);background:var(--card);max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.pill[hidden]{display:none}
+.pill.ok::before{background:var(--ok)}.pill.off::before{background:var(--warn)}.pill.err::before{background:var(--err)}
+main{max-width:640px;margin:0 auto;padding:18px 16px 110px}
+h1{font-size:23px;letter-spacing:-.02em;margin:6px 0 6px}
+p{margin:0 0 12px}.muted{color:var(--muted)}.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;margin:12px 0}
+input{font:inherit;font-size:16px;height:46px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--fg);width:100%}
+input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 22%,transparent)}
+button{font:inherit;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 16px;border-radius:10px;
+  border:1px solid transparent;background:var(--primary);color:#fff;cursor:pointer;width:100%}
+button:active{transform:translateY(1px)}button:disabled{opacity:.55}
+button.secondary{background:var(--card);color:var(--fg);border-color:var(--line)}
+button.link{background:none;color:var(--primary);min-height:auto;padding:6px 0;width:auto;font-weight:500}
+button.link.danger{color:var(--err)}
+.icon{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.msg{padding:10px 12px;border-radius:10px;font-size:14px;margin:10px 0}
+.msg.err{background:var(--err-bg);color:var(--err)}.msg.ok{background:var(--ok-bg);color:var(--ok)}.msg.warn{background:var(--warn-bg);color:var(--warn)}
+.hero{display:grid;place-items:center;width:64px;height:64px;border-radius:18px;margin:10px 0 14px;background:linear-gradient(135deg,#14b8a6,#0284c7);color:#fff}
+.hero .icon{width:32px;height:32px}
+.doc{width:100%;border:0;display:block;min-height:70vh;background:var(--card)}
+.docwrap{margin:0 -16px}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.dock button{flex-direction:column;gap:2px;min-height:54px;font-size:11.5px;font-weight:600;background:none;color:var(--muted);border:0;padding:4px}
+.dock button .icon{width:22px;height:22px}
+.dock button.primary{color:var(--primary)}
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(15,23,42,.45);display:flex;align-items:flex-end}
+.sheet .panel{width:100%;max-width:640px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:20px 18px;padding-bottom:max(20px,env(safe-area-inset-bottom));animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}}
+.row{display:flex;gap:10px}.row > *{flex:1}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+ol.steps{padding-left:20px;margin:6px 0}ol.steps li{margin:6px 0}
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="logo"><svg class="icon" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/><path d="M3.2 12h4.3l1.5-3 3 6 1.5-3h7.3"/></svg></span>
+  <span class="brand">MedPort</span>
+  <span class="pill" id="status" hidden></span>
+</header>
+<main id="view"></main>
+<input type="file" id="pick" accept="application/pdf,image/*" multiple hidden>
+<script>
+"use strict";
+// ---------------------------------------------------------------- encrypted local storage
+// The portfolio and the device token are kept in IndexedDB encrypted with AES-256-GCM. The key comes
+// from the PIN through PBKDF2-SHA256 (310,000 rounds) and only ever exists in memory while unlocked.
+const ROUNDS = 310000, enc = new TextEncoder(), dec = new TextDecoder();
+let key = null, salt = null, state = null, lockTimer = null, installEvent = null;
+
+function rand(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+function toB64(u8) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+async function deriveKey(secret, saltBytes, rounds) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(secret), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: saltBytes, iterations: rounds || ROUNDS, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+function db() {
+  return new Promise((ok, no) => {
+    const r = indexedDB.open("medport", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("vault");
+    r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+  });
+}
+async function idb(mode, fn) {
+  const d = await db();
+  return new Promise((ok, no) => {
+    const t = d.transaction("vault", mode), req = fn(t.objectStore("vault"));
+    t.oncomplete = () => ok(req && req.result); t.onerror = () => no(t.error);
+  });
+}
+const loadRecord = () => idb("readonly", (s) => s.get("main"));
+async function save() {
+  const iv = rand(12);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(state))));
+  await idb("readwrite", (s) => s.put({ v: 1, salt, iv, ct }, "main"));
+}
+async function unlockWith(pin) {
+  const rec = await loadRecord();
+  const k = await deriveKey(pin, rec.salt);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: rec.iv }, k, rec.ct);  // throws on a wrong PIN
+  key = k; salt = rec.salt; state = JSON.parse(dec.decode(pt));
+}
+function lock() { key = null; state = null; render(); }
+
+// ---------------------------------------------------------------- talking to the computer at home
+async function api(path, opts = {}, ms = 6000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const headers = Object.assign({}, opts.headers || {});
+    if (state && state.token) headers.Authorization = "Bearer " + state.token;
+    const r = await fetch(path, Object.assign({}, opts, { headers, signal: ctl.signal, cache: "no-store" }));
+    if (!r.ok) {
+      let m = ""; try { m = (await r.json()).detail; } catch (e) {}
+      const err = new Error(m || ("HTTP " + r.status)); err.status = r.status; throw err;
+    }
+    return r.json();
+  } finally { clearTimeout(t); }
+}
+async function sync(quiet) {
+  if (!state) return;
+  setStatus("Syncing…", "");
+  try {
+    state.snapshot = await api("/m/api/snapshot");
+    state.synced = new Date().toISOString();
+    state.unpaired = false;
+    await save();
+    if (!quiet) toast("Updated from your computer.", "ok");
+  } catch (e) {
+    if (e.status === 401) { state.unpaired = true; await save(); }
+  }
+  render();
+}
+
+// ---------------------------------------------------------------- views
+const $ = (s) => document.querySelector(s);
+const ICON = {
+  lock: '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  print: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><rect x="2" y="9" width="20" height="9" rx="2"/><path d="M6 14h12v8H6z"/></svg>',
+  send: '<svg class="icon" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+  upload: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>',
+  phone: '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+};
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function ago(iso) {
+  if (!iso) return "never";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + " min ago";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + ", " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+function setStatus(text, cls) { const s = $("#status"); s.hidden = !text; s.textContent = text || ""; s.className = "pill " + (cls || ""); }
+function toast(text, cls) {
+  const m = document.createElement("div"); m.className = "msg " + (cls || "ok"); m.textContent = text;
+  m.style.cssText = "position:fixed;left:16px;right:16px;bottom:90px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.18)";
+  document.body.appendChild(m); setTimeout(() => m.remove(), 3500);
+}
+
+async function render() {
+  const rec = await loadRecord().catch(() => null);
+  const code = new URLSearchParams(location.hash.slice(1)).get("pair");
+  if (!rec && code) return viewPair(code);
+  if (!rec) return viewWelcome();
+  if (!state) return viewUnlock();
+  return viewPortfolio();
+}
+
+function viewWelcome() {
+  setStatus("", "");
+  $("#view").innerHTML = `<div class="hero">${ICON.phone}</div>
+    <h1>Your portfolio, on your phone</h1>
+    <p class="muted">MedPort on your computer reads your reports. This app keeps an encrypted copy here, so you can show it or send it to a doctor with no laptop or internet.</p>
+    <div class="card"><strong>To start</strong>
+      <ol class="steps"><li>On your computer, open MedPort &rarr; <b>Share &amp; backup</b> &rarr; <b>Phone app</b>.</li>
+      <li>Press <b>Pair a phone</b>, then type the code shown under the QR code here (or scan the QR code with the camera).</li></ol>
+      <form id="cf"><label>Pairing code <input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH" required></label><button>Continue</button></form></div>`;
+  $("#cf").onsubmit = (e) => { e.preventDefault(); viewPair($("#code").value.trim()); };
+}
+
+function viewPair(code) {
+  setStatus("", "");
+  const guess = /iphone|ipad/i.test(navigator.userAgent) ? "iPhone" : "My phone";
+  $("#view").innerHTML = `<div class="hero">${ICON.lock}</div>
+    <h1>Pair this phone</h1>
+    <p class="muted">Choose a PIN. It unlocks MedPort on this phone and encrypts the copy stored here. It never leaves the phone and can't be recovered, but you can always pair again.</p>
+    <form id="f" class="card">
+      <label>Name for this phone <input id="dn" value="${guess}" maxlength="40"></label>
+      <label>PIN (at least 6 digits or characters) <input id="p1" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
+      <label>Type it again <input id="p2" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
+      <label id="newcode" hidden>New pairing code from your computer <input id="nc" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH"></label>
+      <div id="err"></div>
+      <button id="go">Pair and download my portfolio</button>
+    </form>`;
+  $("#f").onsubmit = async (e) => {
+    e.preventDefault();
+    const p1 = $("#p1").value, p2 = $("#p2").value, err = $("#err");
+    if (p1.length < 6) { err.innerHTML = '<div class="msg err">Use at least 6 digits or characters.</div>'; return; }
+    if (p1 !== p2) { err.innerHTML = '<div class="msg err">The two PINs are different.</div>'; return; }
+    if (!$("#newcode").hidden) {
+      if (!$("#nc").value.trim()) { err.innerHTML = '<div class="msg err">Type the new code shown on your computer.</div>'; return; }
+      code = $("#nc").value.trim();
+    }
+    $("#go").disabled = true; $("#go").innerHTML = '<span class="spinner"></span>Pairing…';
+    try {
+      const { token } = await api("/m/api/pair", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, name: $("#dn").value }) });
+      salt = rand(16); key = await deriveKey(p1, salt);
+      state = { token, device: $("#dn").value };
+      state.snapshot = await api("/m/api/snapshot", {}, 20000);
+      state.synced = new Date().toISOString();
+      await save();
+      history.replaceState(null, "", "/m/");
+      render();
+      toast("Paired. Your portfolio is saved on this phone.", "ok");
+    } catch (x) {
+      key = null; state = null;
+      if (x.status === 403) { $("#newcode").hidden = false; $("#nc").value = ""; $("#nc").focus(); }  // that code is spent: ask for a new one
+      err.innerHTML = `<div class="msg err">${esc(x.name === "AbortError" ? "Couldn't reach your computer. Is this phone on the same Wi-Fi?" : x.message)}</div>`;
+      $("#go").disabled = false; $("#go").textContent = "Try again";
+    }
+  };
+}
+
+function viewUnlock() {
+  setStatus("Locked", "");
+  $("#view").innerHTML = `<div class="hero">${ICON.lock}</div><h1>Unlock MedPort</h1>
+    <form id="f" class="card"><label>PIN <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" required autofocus></label>
+    <div id="err"></div><button id="go">Unlock</button></form>
+    <button class="link danger" id="forget">Forgot the PIN? Remove the copy on this phone</button>`;
+  $("#f").onsubmit = async (e) => {
+    e.preventDefault();
+    $("#go").disabled = true; $("#go").innerHTML = '<span class="spinner"></span>Unlocking…';
+    try { await unlockWith($("#pin").value); render(); sync(true); }
+    catch (x) { $("#err").innerHTML = '<div class="msg err">Wrong PIN.</div>'; $("#go").disabled = false; $("#go").textContent = "Unlock"; $("#pin").select(); }
+  };
+  $("#forget").onclick = forget;
+}
+
+function viewPortfolio() {
+  const s = state.snapshot || {};
+  const away = state.synced && (Date.now() - new Date(state.synced)) > 90000;
+  setStatus(state.unpaired ? "Unpaired" : away ? "Offline copy · " + ago(state.synced) : "Synced " + ago(state.synced),
+            state.unpaired ? "err" : away ? "off" : "ok");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const tip = installEvent ? '<button class="link" id="install">Install as an app</button>'
+    : (!standalone && /iphone|ipad/i.test(navigator.userAgent) ? "<br>Tip: tap Share &rarr; Add to Home Screen to open it like an app." : "");
+  $("#view").innerHTML = `
+    ${state.unpaired ? '<div class="msg err">Your computer no longer recognises this phone. This copy still works; pair again to get updates.</div>' : ""}
+    ${s.to_review ? `<div class="msg warn">${s.to_review} report${s.to_review > 1 ? "s" : ""} still to check on your computer.</div>` : ""}
+    <div class="docwrap"><iframe class="doc" id="doc" title="Medical portfolio" sandbox="allow-same-origin allow-modals"></iframe></div>
+    <p class="small muted" style="margin-top:12px">This copy was made ${ago(s.generated)} on your computer and is stored encrypted on this phone. ${tip}</p>
+    <button class="link danger" id="forget">Remove MedPort data from this phone</button>
+    <nav class="dock">
+      <button class="primary" id="b-send">${ICON.send}Send to doctor</button>
+      <button id="b-print">${ICON.print}Print / PDF</button>
+      <button id="b-up">${ICON.upload}Add report</button>
+      <button id="b-lock">${ICON.lock}Lock</button>
+    </nav>`;
+  const f = $("#doc");
+  f.onload = () => { try { f.style.height = f.contentDocument.documentElement.scrollHeight + "px"; } catch (e) {} };
+  f.srcdoc = s.html || "<p>No portfolio yet.</p>";
+  $("#b-lock").onclick = lock;
+  $("#b-print").onclick = () => f.contentWindow.print();
+  $("#b-send").onclick = sendSheet;
+  $("#b-up").onclick = () => $("#pick").click();
+  $("#forget").onclick = forget;
+  const ins = $("#install");
+  if (ins) ins.onclick = () => { installEvent.prompt(); installEvent = null; render(); };
+}
+
+// ---------------------------------------------------------------- send a locked file (works offline)
+function sendSheet() {
+  const sh = document.createElement("div"); sh.className = "sheet";
+  sh.innerHTML = `<form class="panel" id="sf"><h1 style="font-size:19px">Send to a doctor</h1>
+    <p class="muted small">Makes one locked file you can send by WhatsApp or email. Tell the doctor the passphrase in person or by phone; it opens in any browser, with no app.</p>
+    <label>Passphrase for the doctor <input id="pp" type="text" autocomplete="off" minlength="6" required placeholder="At least 6 characters"></label>
+    <div id="serr"></div>
+    <div class="row"><button type="button" class="secondary" id="cancel">Cancel</button><button id="mk">Create and send</button></div></form>`;
+  document.body.appendChild(sh);
+  sh.querySelector("#cancel").onclick = () => sh.remove();
+  sh.onclick = (e) => { if (e.target === sh) sh.remove(); };
+  sh.querySelector("#sf").onsubmit = async (e) => {
+    e.preventDefault();
+    const pass = sh.querySelector("#pp").value;
+    if (pass.length < 6) return;
+    const btn = sh.querySelector("#mk"); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Locking…';
+    try {
+      const file = await lockedFile(pass);
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Medical portfolio", text: "My medical portfolio. Open it in a browser; I'll tell you the passphrase." });
+      } else {
+        const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+        toast("Saved to your downloads. Send it from there.", "ok");
+      }
+      sh.remove();
+    } catch (x) {
+      if (x.name === "AbortError") { sh.remove(); return; }  // the share sheet was closed
+      sh.querySelector("#serr").innerHTML = `<div class="msg err">${esc(x.message)}</div>`;
+      btn.disabled = false; btn.textContent = "Create and send";
+    }
+  };
+}
+async function lockedFile(pass) {
+  // the same format the computer makes, so the doctor sees the same unlock page
+  const s = state.snapshot, fsalt = rand(16), iv = rand(12), rounds = s.rounds || ROUNDS;
+  const k = await deriveKey(pass, fsalt, rounds);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, enc.encode(s.html)));
+  const data = JSON.stringify({ salt: toB64(fsalt), iv: toB64(iv), ct: toB64(ct), rounds });
+  const html = s.share_template.split("{data}").join(data);
+  return new File([html], "medical-portfolio-" + new Date().toISOString().slice(0, 10) + ".html", { type: "text/html" });
+}
+
+// ---------------------------------------------------------------- send a report to the computer
+$("#pick").onchange = async () => {
+  const files = $("#pick").files;
+  if (!files.length || !state) return;
+  const fd = new FormData(); for (const f of files) fd.append("files", f);
+  toast("Sending to your computer…", "ok");
+  try {
+    await api("/m/api/upload", { method: "POST", body: fd }, 120000);
+    toast("Sent. Check it on your computer, then sync.", "ok");
+  } catch (x) {
+    toast(x.name === "AbortError" || x instanceof TypeError ? "Couldn't reach your computer. Try again on your home Wi-Fi." : x.message, "err");
+  }
+  $("#pick").value = "";
+};
+
+async function forget() {
+  if (!confirm("Remove the MedPort copy from this phone? Your computer keeps everything; you can pair again.")) return;
+  key = null; state = null;
+  await new Promise((ok) => { const r = indexedDB.deleteDatabase("medport"); r.onsuccess = r.onerror = r.onblocked = ok; });
+  history.replaceState(null, "", "/m/");
+  render();
+}
+
+// lock again when the phone is put away for 5 minutes
+document.addEventListener("visibilitychange", () => {
+  clearTimeout(lockTimer);
+  if (document.hidden && state) lockTimer = setTimeout(lock, 5 * 60 * 1000);
+});
+window.addEventListener("online", () => sync(true));
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvent = e; if (state) render(); });
+window.addEventListener("hashchange", render);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/m/sw.js").catch((e) => {
+  const b = document.createElement("div");
+  b.className = "msg warn"; b.style.margin = "12px 16px 0";
+  b.innerHTML = "<b>This phone doesn't trust MedPort's certificate yet</b>, so the app can't work offline. " +
+    "Finish step 1 on the setup page (install it as a <b>CA certificate</b>), then close Chrome completely and open this page again.";
+  document.body.insertBefore(b, document.querySelector("main"));
+});
+if (!window.isSecureContext || !window.crypto || !crypto.subtle) {
+  $("#view").innerHTML = '<div class="msg err">This page has to be opened over https. Open the setup page from MedPort on your computer and follow step 1.</div>';
+} else {
+  render();
+}
+</script>
+</body>
+</html>
+{% endraw %}

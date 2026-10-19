@@ -1,0 +1,43 @@
+{% from "_icons.html" import icon %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}MedPort{% endblock %}</title>
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("medport-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+{% if inline_css %}<style>{{ inline_css | safe }}</style>{% else %}<link rel="stylesheet" href="/static/style.css?v={{ asset_v() }}">{% endif %}
+</head>
+<body>
+{% set path = request.url.path if request and request.url else "" %}
+{% if not share %}
+<header class="top no-print">
+  <a class="brand" href="/"><span class="logo">{{ icon("logo") }}</span>MedPort</a>
+  <nav>
+    <a href="/" class="{{ 'active' if path == '/' or path.startswith('/test/') }}">{{ icon("home") }}<span>Portfolio</span></a>
+    <a href="/documents" class="{{ 'active' if path.startswith('/documents') or path.startswith('/doc/') }}">{{ icon("files") }}<span>Reports</span></a>
+    <a href="/profile" class="{{ 'active' if path.startswith('/profile') }}">{{ icon("user") }}<span>Profile</span></a>
+    <a href="/share" class="{{ 'active' if path.startswith('/share') }}">{{ icon("share") }}<span>Share &amp; backup</span></a>
+  </nav>
+  <div class="top-right">
+  {% if ai %}
+  <span class="ai {{ 'on' if ai.running and ai.has_model else 'off' }}" title="All processing happens on this computer">
+    {% if ai.running and ai.has_model %}Local model: {{ ai.model }}{% elif ai.running %}Ollama running, model {{ ai.model }} not pulled{% else %}Offline rule parser (no local model){% endif %}
+  </span>
+  {% endif %}
+    <button type="button" id="theme-toggle" class="icon-btn" title="Switch light / dark" aria-label="Switch light or dark theme">{{ icon("moon", "theme-light") }}{{ icon("sun", "theme-dark") }}</button>
+  </div>
+</header>
+{% endif %}
+{% if request and request.app and request.app.state.demo %}<div class="demo-banner no-print">Public demo with fictional reports. Uploads are off and nothing you change is kept. <a href="https://ollama.com">MedPort runs on your own laptop</a> with a local open model.</div>{% endif %}
+<main class="fade-in">
+{% block content %}{% endblock %}
+</main>
+{% if request and (request.query_params.get('error') or request.query_params.get('ok')) %}
+<div class="toasts no-print" role="status">
+  {% if request.query_params.get('error') %}<div class="toast err">{{ icon("alert") }}<div>{{ request.query_params.get('error') }}</div><button type="button" aria-label="Close">&times;</button></div>{% endif %}
+  {% if request.query_params.get('ok') %}<div class="toast ok">{{ icon("check") }}<div>{{ request.query_params.get('ok') }}</div><button type="button" aria-label="Close">&times;</button></div>{% endif %}
+</div>
+{% endif %}
+{% if not inline_css %}<script src="/static/app.js?v={{ asset_v() }}" defer></script>{% endif %}
+</body>
+</html>

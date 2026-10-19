@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Medical portfolio{% if p.profile.name %}: {{ p.profile.name }}{% endif %}{% endblock %}
+{% macro src(o) -%}
+  {%- if share and share.file -%}{{ o.filename }}{% if o.page %}, p.{{ o.page }}{% endif %}
+  {%- elif share -%}<a href="/s/{{ share.token }}/doc/{{ o.doc_id }}{% if o.page %}#page={{ o.page }}{% endif %}" target="_blank">{{ o.filename }}</a>
+  {%- else -%}<a href="/doc/{{ o.doc_id }}{% if o.page %}#page={{ o.page }}{% endif %}" target="_blank">{{ o.filename }}</a>{%- endif -%}
+{%- endmacro %}
+{% block content %}
+{% set ns = namespace(tests=0) %}{% for v in p.groups.values() %}{% set ns.tests = ns.tests + v|length %}{% endfor %}
+{% if not share %}
+<section class="upload no-print">
+  <form action="/upload" method="post" enctype="multipart/form-data" class="drop" data-busy="Uploading&hellip;">
+    <span class="drop-icon">{{ icon("upload") }}</span>
+    <label>Drop reports here or click to choose
+      <span class="muted">PDF or phone photo, as many as you like. They are read on this computer.</span>
+      <span class="chosen"></span>
+      <input type="file" name="files" multiple accept="application/pdf,image/png,image/jpeg,image/webp" required>
+    </label>
+    <button>{{ icon("sparkles") }}Read reports</button>
+  </form>
+  <div class="actions">
+    <button onclick="window.print()" class="secondary">{{ icon("printer") }}Print / save PDF</button>
+  </div>
+</section>
+
+{% if ai and not (ai.running and ai.has_model) and not (request.app.state.demo if request else false) %}
+<div class="setup-ai no-print">
+  <span class="feature-icon">{{ icon("sparkles") }}</span>
+  <div><strong>Turn on the AI reader (optional, free, stays on this computer)</strong>
+    {% if not ai.running %}<p class="muted small">1. Install Ollama from <a href="https://ollama.com/download" target="_blank" rel="noopener">ollama.com/download</a> and open it.
+      2. In a terminal run <code>ollama pull {{ ai.configured }}</code> (about 2 GB, once). 3. Refresh this page.
+      Until then MedPort reads common lab layouts with its built-in rule parser.</p>
+    {% else %}<p class="muted small">Ollama is running but has no text model yet. In a terminal run <code>ollama pull {{ ai.configured }}</code> (about 2 GB, once), then refresh this page.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% for h in p.held %}
+<a class="held-banner no-print" href="/doc/{{ h.id }}/review">{{ icon("alert") }}<span><strong>Is this your report?</strong>
+  {{ h.title or h.filename }} names {{ h.patient_name or 'someone else' }}. It stays out of your portfolio until you choose.</span><span class="go">Check it &rarr;</span></a>
+{% endfor %}
+{% if p.docs %}
+<section class="stats no-print">
+  <a class="stat tone-primary" href="/documents"><span class="ico">{{ icon("files") }}</span><div><b data-count="{{ p.docs|length }}">{{ p.docs|length }}</b><span>reports</span></div></a>
+  <a class="stat" href="#labs"><span class="ico">{{ icon("flask") }}</span><div><b data-count="{{ ns.tests }}">{{ ns.tests }}</b><span>tests tracked</span></div></a>
+  <a class="stat {{ 'tone-high' if p.attention else 'tone-ok' }}" href="#attention"><span class="ico">{{ icon("alert" if p.attention else "check") }}</span><div><b data-count="{{ p.attention|length }}">{{ p.attention|length }}</b><span>outside reference range</span></div></a>
+  <a class="stat {{ 'tone-low' if p.unreviewed else 'tone-ok' }}" href="/documents"><span class="ico">{{ icon("clock" if p.unreviewed else "shield") }}</span><div><b data-count="{{ p.unreviewed }}">{{ p.unreviewed }}</b><span>{{ 'to review' if p.unreviewed else 'all checked' }}</span></div></a>
+</section>
+{% endif %}
+{% endif %}
+
+<article class="sheet">
+  <header class="patient">
+    <div class="who">
+      {% if p.profile.name %}<span class="avatar">{{ (p.profile.name.split()|reject('in', ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Mr', 'Mrs', 'Ms', 'Dr', 'Smt.', 'Shri', 'Smt'])|map('first')|join(''))[:2]|upper }}</span>{% endif %}
+      <div>
+        <h1>{{ p.profile.name or "Your medical portfolio" }}</h1>
+        <div class="chips">
+          {% if p.age is not none %}<span class="chip">{{ p.age }} years</span>{% endif %}
+          {% if p.profile.sex %}<span class="chip">{{ p.profile.sex }}</span>{% endif %}
+          {% if p.profile.dob %}<span class="chip">born {{ p.profile.dob }}</span>{% endif %}
+          {% if p.profile.blood_group %}<span class="chip blood">Blood {{ p.profile.blood_group }}</span>{% endif %}
+          {% if not p.profile.name and not share %}<a class="chip" href="/profile">+ Add your details</a>{% endif %}
+        </div>
+        {% if p.profile.emergency_contact %}<p class="muted small">Emergency contact: {{ p.profile.emergency_contact }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="generated muted">Summary of {{ p.docs|length }} report{{ 's' if p.docs|length != 1 }}<br>Generated {{ p.today }}</div>
+  </header>
+
+  {% if not p.docs %}
+  <div class="empty"><span class="drop-icon">{{ icon("upload") }}</span>
+    <strong>No reports yet</strong><br>Upload a lab report or discharge summary to start. Everything stays on this computer.
+    {% if not share %}<br>You can also add your medications, conditions and allergies yourself below.{% endif %}</div>
+  {% endif %}
+
+  {% macro item_row(it, kind) -%}
+  <div class="item">
+    <div class="item-main">
+      <strong>{{ it.name }}</strong>{% if it.detail %} <span class="{{ 'muted' if kind != 'medication' }}">{{ it.detail }}</span>{% endif %}
+      <div class="item-src">{% if it.doc_id %}{{ icon("file") }}from {{ it.filename }}{% if it.date %} &middot; {{ it.date }}{% endif %}
+        {%- else %}<span class="chip mine">{{ icon("user") }}{{ 'Added by patient' if share else 'Added by you' }}</span>{% endif %}</div>
+    </div>
+    {% if not share %}<div class="item-actions no-print">
+      {% if kind == 'medication' %}<form method="post" action="/items/{{ it.id }}/stop"><button class="link" title="Mark as no longer taking">stopped?</button></form>{% endif %}
+      <form method="post" action="/item/{{ it.id }}" onsubmit="return confirm('Remove this from your portfolio?')"><input type="hidden" name="back" value="portfolio">
+        <button name="action" value="delete" class="small danger" title="Remove" aria-label="Remove {{ it.name }}">{{ icon("x") }}</button></form>
+    </div>{% endif %}
+  </div>
+  {%- endmacro %}
+  {% macro add_form(kind, name_hint, detail_hint) -%}
+  {% if not share %}<details class="add-item no-print"><summary>+ Add {{ kind }}</summary>
+    <form method="post" action="/items" class="add-form">
+      <input type="hidden" name="kind" value="{{ kind }}">
+      <input name="name" placeholder="{{ name_hint }}" required aria-label="{{ kind }} name">
+      <input name="detail" placeholder="{{ detail_hint }}" aria-label="details">
+      <button class="small">Add</button>
+    </form></details>{% endif %}
+  {%- endmacro %}
+
+  {% if p.docs or p.allergies or p.conditions or p.medications or not share %}
+  <section class="grid3" id="summary">
+    <div class="card {{ 'alert' if p.allergies }}">
+      <h2>{{ icon("alert") }}Allergies{% if p.allergies %}<span class="count">{{ p.allergies|length }}</span>{% endif %}</h2>
+      {% for a in p.allergies %}{{ item_row(a, 'allergy') }}
+      {% else %}<p class="muted">None recorded</p>{% endfor %}
+      {{ add_form('allergy', 'e.g. Penicillin', 'Reaction, e.g. rash') }}
+    </div>
+    <div class="card">
+      <h2>{{ icon("stethoscope") }}Conditions{% if p.conditions %}<span class="count">{{ p.conditions|length }}</span>{% endif %}</h2>
+      {% for c in p.conditions %}{{ item_row(c, 'condition') }}
+      {% else %}<p class="muted">None recorded</p>{% endfor %}
+      {{ add_form('condition', 'e.g. Asthma', 'Since when, notes') }}
+    </div>
+    <div class="card">
+      <h2>{{ icon("pill") }}Medications{% if p.medications %}<span class="count">{{ p.medications|length }}</span>{% endif %}</h2>
+      {% for m in p.medications %}{{ item_row(m, 'medication') }}
+      {% else %}<p class="muted">None recorded</p>{% endfor %}
+      {{ add_form('medication', 'e.g. Metformin', 'Dose and how often') }}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if p.docs %}  {% if p.attention %}
+  <section id="attention">
+    <div class="section-head"><h2>{{ icon("alert") }}Outside reference range in latest result</h2></div>
+    <div class="table-wrap">
+    <table class="labs t-attention">
+      <thead><tr><th>Test</th><th>Latest</th><th>Reference</th><th>Previous</th><th>Date</th></tr></thead>
+      <tbody>
+      {% for e in p.attention %}
+        <tr><td>{% if share %}{{ e.name }}{% else %}<a href="/test/{{ e.slug | urlencode }}">{{ e.name }}</a>{% endif %}</td>
+          <td class="{{ e.latest.flag }}"><strong>{{ e.latest.value_text }}</strong> {{ e.latest.unit or '' }} <span class="tag {{ e.latest.flag }}">{{ e.latest.flag }}</span></td>
+          <td>{{ e.latest.ref_text or '' }}</td>
+          <td>{% if e.prev %}{{ e.prev.value_text }} <span class="muted">({{ e.prev.date }})</span>{% endif %}</td>
+          <td>{{ e.latest.date }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endif %}
+
+  <section id="labs">
+    <div class="section-head">
+      <h2>{{ icon("trend") }}Lab results</h2>
+      {% if not share %}<label class="search no-print">{{ icon("search") }}<input type="search" placeholder="Search tests&hellip;" data-filter aria-label="Search tests"></label>{% endif %}
+    </div>
+    {% if p.groups|length > 1 %}<nav class="cat-nav no-print">{% for cat in p.groups %}<a href="#cat-{{ loop.index }}">{{ cat }}</a>{% endfor %}</nav>{% endif %}
+    {% for cat, entries in p.groups.items() %}
+    <div data-filterable id="cat-{{ loop.index }}">
+    <h3>{{ cat }}</h3>
+    <div class="table-wrap">
+    <table class="labs t-results">
+      <thead><tr><th>Test</th><th>Latest</th><th>Reference</th><th>Trend</th><th>Previous</th><th>Source</th></tr></thead>
+      <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>{% if share %}{{ e.name }}{% else %}<a href="/test/{{ e.slug | urlencode }}">{{ e.name }}</a>{% endif %}
+          {% if not e.latest.verified %}<span class="tag unrev" title="Not yet checked against the report">unreviewed</span>{% endif %}</td>
+        <td class="{{ e.latest.flag or '' }}"><strong>{{ e.latest.value_text }}</strong> {{ e.latest.unit or '' }}
+          {% if e.latest.flag in ('high','low') %}<span class="tag {{ e.latest.flag }}">{{ e.latest.flag }}</span>{% endif %}
+          <div class="muted small">{{ e.latest.date }}</div></td>
+        <td>{{ e.latest.ref_text or '' }}</td>
+        <td>{{ e.spark | safe }}{% if e.count > 1 %}<div class="muted small">{{ e.count }} results</div>{% endif %}</td>
+        <td>{% if e.prev %}{{ e.prev.value_text }} <span class="muted small">{{ e.prev.date }}</span>{% endif %}</td>
+        <td class="small"><span class="clip" title="{{ e.latest.filename }}">{{ src(e.latest) }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    </div>
+    {% endfor %}
+    <p class="no-match muted">No test matches that search.</p>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>{{ icon("calendar") }}Report timeline</h2></div>
+    <ol class="timeline">
+      {% for d in p.docs %}
+      <li><span class="date">{{ d.report_date }}</span>
+        {% if share and share.file %}{{ d.title or d.filename }}{% elif share %}<a href="/s/{{ share.token }}/doc/{{ d.id }}" target="_blank">{{ d.title or d.filename }}</a>{% else %}<a href="/doc/{{ d.id }}" target="_blank">{{ d.title or d.filename }}</a>{% endif %}
+        {% if d.lab %}<span class="muted">&middot; {{ d.lab }}</span>{% endif %}</li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <footer class="disclaimer">
+    Compiled by the patient from their own reports using MedPort. Values were read automatically and
+    {% if p.unreviewed %}not all have been checked{% else %}checked by the patient{% endif %} against the originals; please confirm against the source report before clinical use.
+    This summary contains no interpretation or medical advice.
+  </footer>
+</article>
+{% if not share %}<script>if (new URLSearchParams(location.search).has("print")) window.addEventListener("load", () => window.print());</script>{% endif %}
+{% endblock %}

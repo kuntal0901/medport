@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Your details</h1><p class="muted">Shown at the top of the portfolio. Stored only on this computer.</p></div></div>
+<form method="post" action="/profile" class="card form-grid" style="max-width:760px">
+  <label>Name <input name="name" value="{{ profile.name or '' }}" autocomplete="name"></label>
+  <label>Date of birth <input name="dob" type="date" value="{{ profile.dob or '' }}"></label>
+  <label>Sex <select name="sex">{% for s in ['', 'Female', 'Male', 'Other'] %}<option value="{{ s }}"{% if (profile.sex or '') == s %} selected{% endif %}>{{ s or 'Prefer not to say' }}</option>{% endfor %}{% if profile.sex and profile.sex not in ['Female', 'Male', 'Other'] %}<option selected>{{ profile.sex }}</option>{% endif %}</select></label>
+  <label>Blood group <select name="blood_group">{% for b in ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}<option value="{{ b }}"{% if (profile.blood_group or '') == b %} selected{% endif %}>{{ b or 'Not known' }}</option>{% endfor %}{% if profile.blood_group and profile.blood_group not in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}<option selected>{{ profile.blood_group }}</option>{% endif %}</select></label>
+  <label>Phone <input name="phone" value="{{ profile.phone or '' }}" autocomplete="tel"></label>
+  <label>Emergency contact <input name="emergency_contact" value="{{ profile.emergency_contact or '' }}" placeholder="Name, phone"></label>
+  <div class="full"><a class="button secondary" href="/">Cancel</a><button>{{ icon("check") }}Save details</button></div>
+</form>
+{% endblock %}

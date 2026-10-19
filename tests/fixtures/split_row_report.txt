@@ -1,0 +1,32 @@
+Page 1/1
+
+Patient  : Mr. TEST PATIENT  Order No.  : ORD0000000001
+UHID / IP No.  : XX01.0000000  Ordered By  : Dr. Example Doctor -
+Gastroenterology
+Age  : 30 years / Male  Ordered at  : 03/10/2026 | 03:28 PM
+Sample Collected at  : 03/10/2026 | 03:33 PM  Payor  : Self-Pay
+Received at  : 03/10/2026 | 04:05 PM  Reported at  : 03/10/2026 | 05:51 PM
+Visit Type  : OP  Sample ID  : SMP00000000
+
+BIOCHEMISTRY
+
+Test  Result  Unit  Reference Interval  Flag
+VITAMIN D TOTAL
+Sample: SERUM PLAIN
+Deficient:<20
+TOTAL VITAMIN D  Insufficient: 20-30
+15.90  ng/mL
+(Method:CLIA)  Sufficient: 30-100
+Potentially toxic: >100
+
+Report Disclaimer
+All results released pertain to the specimen as received by the lab for testing.
+Note: Auto-verified Results
+
+- - - - - - - - - - - - - - - - E n d O f R e p o r t - - - - - - - - - - - - - - - -
+
+DR. EXAMPLE PATHOLOGIST
+Associate Consultant
+MD, Bio-Chemistry
+
+Example Hospital, Example Road, Bangalore - 560000.
